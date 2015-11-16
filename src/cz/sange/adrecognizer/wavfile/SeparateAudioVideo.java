@@ -1,4 +1,4 @@
-package cz.sange.adrecognizer;
+package cz.sange.adrecognizer.wavfile;
 
 /**
 * Created by sange on 15/11/15.

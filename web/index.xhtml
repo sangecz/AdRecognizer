@@ -4,12 +4,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:h="http://xmlns.jcp.org/jsf/html"
       xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
-      xmlns:f="http://xmlns.jcp.org/jsf/core">
+      xmlns:f="http://xmlns.jcp.org/jsf/core" xmlns:p="http://primefaces.org/ui">
    <f:view>
        <h1>#{text.appName}</h1>
    </f:view>
 
    <h:outputLabel value="#{text.input}"/>
+   <h:outputText value="&lt;br/&gt;" escape="false" />
 
    <h:form id="form" enctype="multipart/form-data">
 
@@ -26,6 +27,17 @@
        <h:commandButton value="#{text.upload}" action="#{main.processFile}"/>
    </h:form>
 
+   <p:progressBar widgetVar="#{main.progress}" style="width:300px"/>
+
+   <h:outputText value="&lt;br/&gt;" escape="false" />
    <h:outputLabel value="#{text.output}"/>
+   <h:outputText value="&lt;br/&gt;" escape="false" />
+   <h:outputText value="&lt;br/&gt;" escape="false" />
+
+   <h:form>
+       <h:commandButton disabled="#{not main.ready}"
+                      action="#{main.download}" value="#{text.srtFile}">
+       </h:commandButton>
+   </h:form>
 
 </html>

@@ -1,33 +1,31 @@
 package cz.sange.adrecognizer;
 
 import com.sun.istack.internal.NotNull;
+import cz.sange.adrecognizer.srt.SrtFile;
+import cz.sange.adrecognizer.srt.SrtRecord;
+import cz.sange.adrecognizer.wavfile.SeparateAudioVideo;
 import cz.sange.adrecognizer.wavfile.WavFile;
-import cz.sange.adrecognizer.wavfile.WavFileException;
-import de.crysandt.audio.mpeg7audio.Config;
-import de.crysandt.audio.mpeg7audio.ConfigDefault;
-import de.crysandt.audio.mpeg7audio.MP7DocumentBuilder;
-import org.w3c.dom.Document;
 
 import javax.faces.application.FacesMessage;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.SessionScoped;
+import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
 import javax.servlet.http.Part;
-import javax.sound.sampled.AudioFileFormat;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.xml.transform.Result;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import java.io.*;
+import java.text.MessageFormat;
 import java.util.*;
 
-/**
- * Created by sange on 01/11/15.
+/** TODO
+ *  * vytvorit DB reklamnich predelu
+ *      - JPM - postgresql
+ *      - navrhnout DB zaznamy predelu
+ *      - do UI uziv. pridavani rekl. predelu - IN: video predel, OUT: zaznam predelu v DB
+ *  * detekovat reklamy na zaklade DB predelu
+ *      - pro kazdy zaznam v DB predelu: posouvat okenko zaznamu po WAVu a zapisovat do SRT identifikovana mista
+ *  * loading UI
  */
+
 @ManagedBean(name = "main")
 @SessionScoped
 public class MainManagedBean {
@@ -37,15 +35,56 @@ public class MainManagedBean {
 
     private String videoFilePath;
     private String audioFilePath;
+    private String srtFilePath;
+    private boolean ready;
+    private int progress;
 
     private ResourceBundle resourceBundle;
     private FacesContext ctx;
 
     public void processFile() {
+        // preparation
+        progress = 0;
         uploadFile();
         convertVideoToWav();
-        readWav(audioFilePath);
 
+        // ads detection
+        // TODO detect ad
+        readWav(audioFilePath);
+        constructSrtWithAdsDetected();
+
+        // cleanup
+        deleteTemporaryFile(videoFilePath);
+        deleteTemporaryFile(audioFilePath);
+        progress = 100;
+//        deleteTemporaryFile(srtFilePath);
+    }
+
+    private void deleteTemporaryFile(String filePath) {
+        resourceBundle = ResourceBundle.getBundle("msg");
+        try {
+            File file = new File(filePath);
+            if(!file.delete()){
+                String s = resourceBundle.getString("deleteTmpErr");
+                String msg = MessageFormat.format(s, filePath);
+                ctx.addMessage("form:err", new FacesMessage(msg));
+            }
+        } catch(Exception e) {
+            FacesMessage m = new FacesMessage(resourceBundle.getString("ioException"));
+            ctx.addMessage("form:err", m);
+        }
+    }
+
+    private void constructSrtWithAdsDetected() {
+        resourceBundle = ResourceBundle.getBundle("config");
+        srtFilePath = videoFilePath + ".srt";
+        SrtFile srtFile = new SrtFile(srtFilePath);
+
+        SrtRecord r = new SrtRecord(1, "00:00:10,000 --> 00:00:20,000", resourceBundle.getString("advertismentStr"));
+        srtFile.appendSrtRecord(r);
+
+        srtFile.write();
+        ready = true;
     }
 
     private void convertVideoToWav() {
@@ -152,12 +191,55 @@ public class MainManagedBean {
             wavFile.close();
 
             // Output the minimum and maximum value
-            return "Min: "+min+", Max: "+max+", framesRead="+framesReadCnt;
+            System.out.println("Min: "+min+", Max: "+max+", framesRead="+framesReadCnt);
+            // TODO
         } catch (Exception e) {
             resourceBundle = ResourceBundle.getBundle("msg");
             FacesMessage m = new FacesMessage(resourceBundle.getString("wavFileErr"));
             ctx.addMessage("form:err", m);
         }
         return in;
+    }
+
+    public String getSrtFilePath() {
+        return srtFilePath;
+    }
+
+    public void download() throws IOException {
+        FacesContext fc = FacesContext.getCurrentInstance();
+        ExternalContext ec = fc.getExternalContext();
+
+        ec.responseReset(); // Some JSF component library or some Filter might have set some headers in the buffer beforehand. We want to get rid of them, else it may collide.
+//        ec.setResponseContentType(contentType); // Check http://www.iana.org/assignments/media-types for all types. Use if necessary ExternalContext#getMimeType() for auto-detection based on filename.
+//        ec.setResponseContentLength(contentLength); // Set it with the file size. This header is optional. It will work if it's omitted, but the download progress will be unknown.
+        ec.setResponseHeader("Content-Disposition", "attachment; filename=\"" + srtFilePath + "\""); // The Save As popup magic is done here. You can give it any file name you want, this only won't work in MSIE, it will use current request URL as file name instead.
+
+        OutputStream output = ec.getResponseOutputStream();
+        // Now you can write the InputStream of the file to the above OutputStream the usual way.
+        InputStream is = new FileInputStream(new File(srtFilePath));
+        byte[] bytesBuffer = new byte[2048];
+        int bytesRead;
+        while ((bytesRead = is.read(bytesBuffer)) > 0) {
+            output.write(bytesBuffer, 0, bytesRead);
+        }
+
+        // Make sure that everything is out
+        output.flush();
+
+        // Close both streams
+        is.close();
+        output.close();
+
+        fc.responseComplete(); // Important! Otherwise JSF will attempt to render the response which obviously will fail since it's already written with a file and closed.
+
+        deleteTemporaryFile(srtFilePath);
+    }
+
+    public boolean isReady() {
+        return ready;
+    }
+
+    public int getProgress() {
+        return progress;
     }
 }
