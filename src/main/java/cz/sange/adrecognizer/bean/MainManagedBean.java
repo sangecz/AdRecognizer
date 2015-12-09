@@ -1,83 +1,92 @@
-package cz.sange.adrecognizer;
+package cz.sange.adrecognizer.bean;
 
 import com.sun.istack.internal.NotNull;
+import cz.sange.adrecognizer.model.Delimiter;
+import cz.sange.adrecognizer.service.DelimiterService;
+import cz.sange.adrecognizer.service.FileManager;
 import cz.sange.adrecognizer.srt.SrtFile;
 import cz.sange.adrecognizer.srt.SrtRecord;
-import cz.sange.adrecognizer.wavfile.SeparateAudioVideo;
 import cz.sange.adrecognizer.wavfile.WavFile;
 
+import javax.ejb.EJB;
 import javax.faces.application.FacesMessage;
+//import javax.enterprise.context.SessionScoped;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.SessionScoped;
 import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
+//import javax.inject.Named;
 import javax.servlet.http.Part;
 import java.io.*;
-import java.text.MessageFormat;
 import java.util.*;
 
 /** TODO
  *  * vytvorit DB reklamnich predelu
- *      - JPM - postgresql
- *      - navrhnout DB zaznamy predelu
- *      - do UI uziv. pridavani rekl. predelu - IN: video predel, OUT: zaznam predelu v DB
+ *      - zkontrolovat zaznam predelu v DB
  *  * detekovat reklamy na zaklade DB predelu
  *      - pro kazdy zaznam v DB predelu: posouvat okenko zaznamu po WAVu a zapisovat do SRT identifikovana mista
- *  * loading UI
+ *      - pouzit DWT: dynamic time warping distance !! ...
+ *      - na obr. ukazka hledani v tabulce: rekl x film (velikost okenko) + optimalizace - zahazovat deviace
  */
 
 @ManagedBean(name = "main")
 @SessionScoped
-public class MainManagedBean {
+public class MainManagedBean implements Serializable {
 
     @NotNull
     private Part file;
-
-    private String videoFilePath;
-    private String audioFilePath;
     private String srtFilePath;
     private boolean ready;
-    private int progress;
+    private FileManager fileManager;
+    @EJB
+    private DelimiterService delimiterService;
 
-    private ResourceBundle resourceBundle;
-    private FacesContext ctx;
 
     public void processFile() {
+        fileManager = FileManager.getInstance();
+        fileManager.setFile(file);
+
         // preparation
-        progress = 0;
-        uploadFile();
-        convertVideoToWav();
+        fileManager.uploadFile();
+        fileManager.convertVideoToWav();
 
         // ads detection
-        // TODO detect ad
-        readWav(audioFilePath);
+        tryAllDelimitersFromDB();
         constructSrtWithAdsDetected();
 
-        // cleanup
-        deleteTemporaryFile(videoFilePath);
-        deleteTemporaryFile(audioFilePath);
-        progress = 100;
-//        deleteTemporaryFile(srtFilePath);
+//        fileManager.cleanUp();
     }
 
-    private void deleteTemporaryFile(String filePath) {
-        resourceBundle = ResourceBundle.getBundle("msg");
-        try {
-            File file = new File(filePath);
-            if(!file.delete()){
-                String s = resourceBundle.getString("deleteTmpErr");
-                String msg = MessageFormat.format(s, filePath);
-                ctx.addMessage("form:err", new FacesMessage(msg));
+    private void tryAllDelimitersFromDB() {
+
+        List<Delimiter> delimiterList = delimiterService.getAll();
+
+        FileOutputStream fos = null;
+        int idx = 0;
+        for (Delimiter d : delimiterList) {
+            // 1) get delimiter WAV
+            String filePath = "/tmp/__test" + (idx++) + ".wav";
+            try {
+                fos = new FileOutputStream(filePath);
+                fos.write(d.getData());
+                fos.close();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch(Exception e) {
-            FacesMessage m = new FacesMessage(resourceBundle.getString("ioException"));
-            ctx.addMessage("form:err", m);
+
+            // 2) try to 'find' it in provided WAV
+            // TODO detect ad
+            readWav(fileManager.getAudioFilePath());
+
+            // 3) delete delimiter WAV
+            fileManager.deleteTemporaryFile(filePath);
         }
+
     }
 
     private void constructSrtWithAdsDetected() {
-        resourceBundle = ResourceBundle.getBundle("config");
-        srtFilePath = videoFilePath + ".srt";
+        ResourceBundle resourceBundle = ResourceBundle.getBundle("config");
+        srtFilePath = fileManager.getVideoFilePath() + ".srt";
         SrtFile srtFile = new SrtFile(srtFilePath);
 
         SrtRecord r = new SrtRecord(1, "00:00:10,000 --> 00:00:20,000", resourceBundle.getString("advertismentStr"));
@@ -85,65 +94,6 @@ public class MainManagedBean {
 
         srtFile.write();
         ready = true;
-    }
-
-    private void convertVideoToWav() {
-        SeparateAudioVideo separateAudioVideo =
-                new SeparateAudioVideo();
-        separateAudioVideo.process(videoFilePath, audioFilePath);
-    }
-
-    private void uploadFile() {
-        // Create path components to save the file
-        resourceBundle = ResourceBundle.getBundle("config");
-        ctx = FacesContext.getCurrentInstance();
-
-        final String path = resourceBundle.getString("videoFileDestination");
-        final Part filePart = file;
-        final String fileName = getFileName(filePart);
-        videoFilePath = path + File.separator + fileName;
-        audioFilePath = path + File.separator + fileName + ".wav";
-
-        OutputStream out = null;
-        InputStream filecontent = null;
-
-        try {
-            out = new FileOutputStream(new File(videoFilePath));
-            filecontent = filePart.getInputStream();
-
-            int read = 0;
-            final byte[] bytes = new byte[1024];
-
-            while ((read = filecontent.read(bytes)) != -1) {
-                out.write(bytes, 0, read);
-            }
-        } catch (IOException e) {
-            FacesMessage m = new FacesMessage(resourceBundle.getString("fileNotFound"));
-            ctx.addMessage("form:err", m);
-        } finally {
-            try {
-                if (out != null) {
-                    out.close();
-                }
-                if (filecontent != null) {
-                    filecontent.close();
-                }
-            } catch (IOException e){
-                FacesMessage m = new FacesMessage(resourceBundle.getString("ioException"));
-                ctx.addMessage("form:err", m);
-            }
-        }
-    }
-
-    private String getFileName(final Part part) {
-        final String partHeader = part.getHeader("content-disposition");
-        for (String content : part.getHeader("content-disposition").split(";")) {
-            if (content.trim().startsWith("filename")) {
-                return content.substring(
-                        content.indexOf('=') + 1).trim().replace("\"", "");
-            }
-        }
-        return null;
     }
 
     public Part getFile() {
@@ -162,6 +112,8 @@ public class MainManagedBean {
             // Display information about the wav file
             wavFile.display();
 
+//            System.out.println("LEN:::::: " + wavFile.getNumFrames() / wavFile.getSampleRate());
+
             // Get the number of audio channels in the wav file
             int numChannels = wavFile.getNumChannels();
 
@@ -172,6 +124,8 @@ public class MainManagedBean {
             double min = Double.MAX_VALUE;
             double max = Double.MIN_VALUE;
 
+            StringBuilder sb = new StringBuilder(100);
+            int rounds = 0;
             long framesReadCnt = 0;
             do {
                 // Read frames into buffer
@@ -183,7 +137,15 @@ public class MainManagedBean {
                 {
                     if (buffer[s] > max) max = buffer[s];
                     if (buffer[s] < min) min = buffer[s];
+                    sb.append(buffer[s]);
+                    sb.append(" ");
                 }
+
+//                setProgress((int)(100 * framesReadCnt / totalNumFrames));
+//                if(rounds < 100) {
+//                    System.out.println(rounds++ + "# " + sb.toString());
+//                }
+                sb.setLength(0);
             }
             while (framesRead != 0);
 
@@ -194,15 +156,12 @@ public class MainManagedBean {
             System.out.println("Min: "+min+", Max: "+max+", framesRead="+framesReadCnt);
             // TODO
         } catch (Exception e) {
-            resourceBundle = ResourceBundle.getBundle("msg");
-            FacesMessage m = new FacesMessage(resourceBundle.getString("wavFileErr"));
+            ResourceBundle resourceBundle = ResourceBundle.getBundle("msg");
+            FacesMessage m = new FacesMessage(resourceBundle.getString("wavFileErr") + " " + e.toString());
+            FacesContext ctx = FacesContext.getCurrentInstance();
             ctx.addMessage("form:err", m);
         }
         return in;
-    }
-
-    public String getSrtFilePath() {
-        return srtFilePath;
     }
 
     public void download() throws IOException {
@@ -232,14 +191,11 @@ public class MainManagedBean {
 
         fc.responseComplete(); // Important! Otherwise JSF will attempt to render the response which obviously will fail since it's already written with a file and closed.
 
-        deleteTemporaryFile(srtFilePath);
+        fileManager.deleteTemporaryFile(srtFilePath);
     }
 
     public boolean isReady() {
         return ready;
     }
 
-    public int getProgress() {
-        return progress;
-    }
 }

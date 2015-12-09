@@ -1,43 +1,44 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:h="http://xmlns.jcp.org/jsf/html"
-      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
-      xmlns:f="http://xmlns.jcp.org/jsf/core" xmlns:p="http://primefaces.org/ui">
-   <f:view>
-       <h1>#{text.appName}</h1>
-   </f:view>
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns="http://www.w3.org/1999/xhtml"
+                template="./WEB-INF/basicTemplate.xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core">
+    <f:loadBundle basename="text" var="text" />
 
-   <h:outputLabel value="#{text.input}"/>
-   <h:outputText value="&lt;br/&gt;" escape="false" />
+    <ui:define name="content">
 
-   <h:form id="form" enctype="multipart/form-data">
+        <h:outputText value="#{text.input}"/>
+        <h:outputText value="&lt;br/&gt;" escape="false" />
 
-       <h:panelGrid columns="2">
+        <h:form id="form" enctype="multipart/form-data">
+            <h:panelGrid columns="2">
 
-           <h:inputFile id="file" value="#{main.file}">
-               <f:validator validatorId="cz.sange.adrecognizer.validator.FileValidator"/>
-           </h:inputFile>
+                <h:inputFile id="file" value="#{main.file}">
+                    <f:validator validatorId="cz.sange.adrecognizer.validator.FileValidator"/>
+                </h:inputFile>
+                <h:message id="err" for="file" style="color:red" />
 
-           <h:message id="err" for="file" style="color:red" />
+                <h:commandButton
+                        onclick="onSubmitButton();"
+                        value="#{text.upload}"
+                        action="#{main.processFile}"/>
+            </h:panelGrid>
+        </h:form>
 
-       </h:panelGrid>
+        <h:outputText value="&lt;br/&gt;" escape="false" />
+        <h:outputText value="#{text.output}"/>
+        <h:outputText value="&lt;br/&gt;" escape="false" />
 
-       <h:commandButton value="#{text.upload}" action="#{main.processFile}"/>
-   </h:form>
+        <h:form>
+            <h:commandButton disabled="#{not main.ready}"
+                             action="#{main.download}"
+                             value="#{text.srtFile}" />
+        </h:form>
 
-   <p:progressBar widgetVar="#{main.progress}" style="width:300px"/>
 
-   <h:outputText value="&lt;br/&gt;" escape="false" />
-   <h:outputLabel value="#{text.output}"/>
-   <h:outputText value="&lt;br/&gt;" escape="false" />
-   <h:outputText value="&lt;br/&gt;" escape="false" />
 
-   <h:form>
-       <h:commandButton disabled="#{not main.ready}"
-                      action="#{main.download}" value="#{text.srtFile}">
-       </h:commandButton>
-   </h:form>
+    </ui:define>
 
-</html>
+</ui:composition>

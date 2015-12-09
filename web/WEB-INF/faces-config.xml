@@ -10,10 +10,11 @@
             <base-name>text</base-name>
             <var>text</var>
         </resource-bundle>
-        <message-bundle>msg</message-bundle>
+        <message-bundle>cz.sange.adrecognizer.msg</message-bundle>
         <locale-config>
             <default-locale>en</default-locale>
             <supported-locale>en</supported-locale>
         </locale-config>
     </application>
+
 </faces-config>

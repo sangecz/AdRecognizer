@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core">
+<f:loadBundle basename="text" var="text" />
+
+<h:head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link href="./res/css/default.css" rel="stylesheet" type="text/css" />
+    <link href="./res/css/cssLayout.css" rel="stylesheet" type="text/css" />
+    <title><h:outputText value="#{text.appName}"/></title>
+</h:head>
+
+<h:body>
+
+    <h:outputScript>
+        var formSubmitted = false;
+        function onSubmitButton() {
+        if (!formSubmitted) {
+        formSubmitted = true;
+        } else {
+        // disable event propagation if form is already submitted
+        event.preventDefault();
+        }
+        }
+    </h:outputScript>
+
+    <div id="top" class="top">
+        <ui:insert name="top"><h:outputText value="#{text.appName}"/></ui:insert>
+    </div>
+    <div>
+        <div id="left">
+            <ui:insert name="left">
+                <!--<p:menu>-->
+                    <!--<p:menuitem outcome="index" value="#{text.appName}" />-->
+                    <!--<p:menuitem outcome="delimiters" value="#{text.delimiters}" />-->
+                <!--</p:menu>-->
+                <h:panelGrid columns="1">
+                    <h:link outcome="index">#{text.appName}</h:link>
+                    <h:link outcome="delimiters">#{text.delimiters}</h:link>
+                </h:panelGrid>
+            </ui:insert>
+        </div>
+        <div id="content" class="left_content">
+            <ui:insert name="content"></ui:insert>
+        </div>
+    </div>
+</h:body>
+
+</html>

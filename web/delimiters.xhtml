@@ -1,0 +1,51 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns="http://www.w3.org/1999/xhtml"
+                template="./WEB-INF/basicTemplate.xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core">
+    <f:loadBundle basename="text" var="text" />
+
+    <ui:define name="content">
+        <h:form id="form" enctype="multipart/form-data">
+            <h:panelGrid columns="3" cellpadding="5">
+                <h:outputLabel value="#{text.name}: " />
+                <h:inputText id="name" value="#{delimiterManagedBean.name}" required="true"/>
+                <h:message for="name" style="color:red"/>
+
+                <h:outputLabel value="#{text.data}: " />
+                <h:inputFile id="file" value="#{delimiterManagedBean.file}">
+                    <f:validator validatorId="cz.sange.adrecognizer.validator.FileValidator"/>
+                </h:inputFile>
+                <h:message id="err" for="file" style="color:red" />
+
+                <h:outputText value="&lt;br/&gt;" escape="false" />
+                <h:commandButton
+                        onclick="onSubmitButton();"
+                        value="#{text.add}"
+                        action="#{delimiterManagedBean.upload}"/>
+            </h:panelGrid>
+        </h:form>
+
+        <h:form>
+            <h:dataTable var="d" value="#{database.allDelimiters}">
+                <h:column>
+                    <f:facet name="header"><h:outputText value="#{text.name}"/></f:facet>
+                    <h:outputLabel value="#{d.name}" />
+                </h:column>
+                <h:column>
+                    <f:facet name="header"><h:outputText value="#{text.data}"/></f:facet>
+                    <h:outputLabel value="#{d.data}" />
+                </h:column>
+                <h:column>
+                    <f:facet name="header"><h:outputText value="#{text.delete}"/></f:facet>
+                    <h:commandButton value="x" action="#{delimiterManagedBean.delete(d.id)}"/>
+                </h:column>
+            </h:dataTable>
+        </h:form>
+
+
+    </ui:define>
+
+</ui:composition>
