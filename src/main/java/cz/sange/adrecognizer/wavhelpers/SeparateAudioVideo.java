@@ -1,4 +1,4 @@
-package cz.sange.adrecognizer.wavfile;
+package cz.sange.adrecognizer.wavhelpers;
 
 /**
 * Created by sange on 15/11/15.
@@ -29,6 +29,7 @@ public class SeparateAudioVideo {
         IMediaReader mediaReader = ToolFactory.makeReader(from);
         final int mySampleRate = 44100;
         final int myChannels = 2;
+        final int myBitrate = 128;
 
         mediaReader.addListener(new MediaToolAdapter() {
 
@@ -53,7 +54,7 @@ public class SeparateAudioVideo {
                             public void onAddStream(IAddStreamEvent event) {
                                 IStreamCoder streamCoder = event.getSource().getContainer().getStream(event.getStreamIndex()).getStreamCoder();
                                 streamCoder.setFlag(IStreamCoder.Flags.FLAG_QSCALE, false);
-                                streamCoder.setBitRate(128);
+                                streamCoder.setBitRate(myBitrate);
                                 streamCoder.setChannels(myChannels);
                                 streamCoder.setSampleRate(mySampleRate);
                                 streamCoder.setBitRateTolerance(0);

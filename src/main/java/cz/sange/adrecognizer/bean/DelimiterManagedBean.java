@@ -117,7 +117,7 @@ public class DelimiterManagedBean {
         /* Turn all descriptors off */
         config.enableAll(false);
 
-        config.setValue("Resizer", "HopSize", 10);        // set HopSize to 10ms
+        config.setValue("Resizer", "HopSize", 100);        // set HopSize in ms
         config.setValue("AudioWaveform", "enable", true); // Extract the AudioWaveform
 
         Document mpeg7;
@@ -152,7 +152,7 @@ public class DelimiterManagedBean {
             System.arraycopy(maxBytes, 0, minMax, count, count);
 
 
-            ByteArrayOutputStream bucket= new ByteArrayOutputStream();
+            ByteArrayOutputStream bucket = new ByteArrayOutputStream();
             DataOutputStream out = new DataOutputStream(bucket);
 
             for(byte[] row : minMax) {

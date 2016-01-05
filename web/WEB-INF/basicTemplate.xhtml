@@ -11,19 +11,31 @@
     <link href="./res/css/default.css" rel="stylesheet" type="text/css" />
     <link href="./res/css/cssLayout.css" rel="stylesheet" type="text/css" />
     <title><h:outputText value="#{text.appName}"/></title>
+    <h:outputScript library="primefaces" name="jquery/jquery.js" />
+    <h:outputScript type="text/javascript">
+        //function hideLoader() {
+        //    $(".loader").fadeOut("slow");
+        //}
+        //function showLoader() {
+        //    $(".loader").fadeIn("slow");
+        //}
+        //hideLoader();
+    </h:outputScript>
 </h:head>
 
 <h:body>
 
     <h:outputScript>
         var formSubmitted = false;
+
         function onSubmitButton() {
-        if (!formSubmitted) {
-        formSubmitted = true;
-        } else {
-        // disable event propagation if form is already submitted
-        event.preventDefault();
-        }
+            if (!formSubmitted) {
+                formSubmitted = true;
+                //update();
+            } else {
+                // disable event propagation if form is already submitted
+                event.preventDefault();
+            }
         }
     </h:outputScript>
 

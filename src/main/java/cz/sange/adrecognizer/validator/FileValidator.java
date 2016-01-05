@@ -29,7 +29,7 @@ public class FileValidator implements Validator {
             throw  new ValidatorException(new FacesMessage(rd.getString("chooseFile")));
         }
 
-        if(!file.getContentType().startsWith("video")) {
+        if(!file.getContentType().startsWith("video") && !file.getContentType().contains("octet-stream") ) {
             throw  new ValidatorException(new FacesMessage(rd.getString("notVideo")));
         }
     }

@@ -8,6 +8,7 @@
     <f:loadBundle basename="text" var="text" />
 
     <ui:define name="content">
+        <!--<div class="loader"></div>-->
 
         <h:outputText value="#{text.input}"/>
         <h:outputText value="&lt;br/&gt;" escape="false" />
@@ -23,16 +24,29 @@
                 <h:commandButton
                         onclick="onSubmitButton();"
                         value="#{text.upload}"
-                        action="#{main.processFile}"/>
+                        action="#{main.processFile}"
+                        update=":logger" />
             </h:panelGrid>
         </h:form>
 
+        <h:outputText value="#{main.state}" />
         <h:outputText value="&lt;br/&gt;" escape="false" />
-        <h:outputText value="#{text.output}"/>
+        <h:outputText  value="#{main.progress} %" />
         <h:outputText value="&lt;br/&gt;" escape="false" />
 
-        <h:form>
-            <h:commandButton disabled="#{not main.ready}"
+        <!--<h:form id="log">-->
+            <h:inputTextarea id="logger" name="logger" readonly="true" cols="40" rows="15" value="#{main.log}" />
+        <!--</h:form>-->
+
+        <h:form rendered="#{main.ready}">
+            <h:outputText value="#{main.msg}" />
+            <h:outputText value="&lt;br/&gt;" escape="false" />
+
+            <h:outputText value="#{text.output}"/>
+            <h:outputText value="&lt;br/&gt;" escape="false" />
+
+            <!--<h:commandButton disabled="#{not main.ready}"-->
+            <h:commandButton
                              action="#{main.download}"
                              value="#{text.srtFile}" />
         </h:form>

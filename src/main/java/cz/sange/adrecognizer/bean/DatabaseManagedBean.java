@@ -2,14 +2,10 @@ package cz.sange.adrecognizer.bean;
 
 import cz.sange.adrecognizer.service.DelimiterService;
 import cz.sange.adrecognizer.model.Delimiter;
-import cz.sange.adrecognizer.wavfile.WavWriter;
 
 import javax.ejb.EJB;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.SessionScoped;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.List;
 
 /**

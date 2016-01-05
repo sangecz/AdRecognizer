@@ -7,7 +7,7 @@
 // http://www.blitter.com/~russtopia/MIDI/~jglatt/tech/wave.htm
 
 // Version 1.0
-package cz.sange.adrecognizer.wavfile;
+package cz.sange.adrecognizer.wavhelpers;
 
 import java.io.*;
 
@@ -68,6 +68,10 @@ public class WavFile
 	public long getSampleRate()
 	{
 		return sampleRate;
+	}
+
+	public double getDuration(){
+		return (numFrames+0.0) / sampleRate;
 	}
 
 	public int getValidBits()

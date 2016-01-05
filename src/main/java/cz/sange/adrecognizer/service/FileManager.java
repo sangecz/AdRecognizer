@@ -1,6 +1,6 @@
 package cz.sange.adrecognizer.service;
 
-import cz.sange.adrecognizer.wavfile.SeparateAudioVideo;
+import cz.sange.adrecognizer.wavhelpers.SeparateAudioVideo;
 
 import javax.faces.application.FacesMessage;
 import javax.faces.context.FacesContext;

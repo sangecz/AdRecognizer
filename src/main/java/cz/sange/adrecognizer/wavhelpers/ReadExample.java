@@ -1,4 +1,4 @@
-package cz.sange.adrecognizer.wavfile;
+package cz.sange.adrecognizer.wavhelpers;
 
 import java.io.*;
 
