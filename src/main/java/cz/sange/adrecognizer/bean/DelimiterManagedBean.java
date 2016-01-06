@@ -17,6 +17,8 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.ResourceBundle;
+
+import cz.sange.adrecognizer.utils.MyUtils;
 import de.crysandt.audio.mpeg7audio.*;
 import org.w3c.dom.Document;
 
@@ -55,7 +57,7 @@ public class DelimiterManagedBean {
 //            ctx.addMessage("form:err", m);
 //        }
 
-        data = getWaveFormData(fileManager);
+        data = MyUtils.getWaveFormData(fileManager);
         d.setData(data);
         database.addDelimiter(d);
 
@@ -101,96 +103,94 @@ public class DelimiterManagedBean {
         this.database = database;
     }
 
-    public byte[] getWaveFormData(FileManager fileManager) {
-        // FIXME prendat nekam do tools, pristupne i pro MainManagedBean
-
-        AudioInputStream ais = null;
-        try {
-            ais = AudioSystem.getAudioInputStream(new File(fileManager.getAudioFilePath()));
-        } catch (UnsupportedAudioFileException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        Config config = new ConfigDefault();
-
-        /* Turn all descriptors off */
-        config.enableAll(false);
-
-        config.setValue("Resizer", "HopSize", 100);        // set HopSize in ms
-        config.setValue("AudioWaveform", "enable", true); // Extract the AudioWaveform
-
-        Document mpeg7;
-        try {
-            assert ais != null;
-            mpeg7 = MP7DocumentBuilder.encode(ais, config);
-
-            String [] min = mpeg7.getElementsByTagName("Min").item(0).getTextContent().split(" ");
-
-
-            // 'toBytes'
-            int count = min.length;
-//            System.out.println("COUNT_IN=" + count);
-            byte [][] minBytes = new byte[count][];
-
-            for (int i = 0; i < count; i++) {
-                minBytes[i] = min[i].getBytes(Charset.forName("UTF-8"));
-            }
-//            System.out.println("MIN_IN: " + Arrays.deepToString(min));
-            min = null;
-
-            byte [][] maxBytes = new byte[count][];
-            String [] max = mpeg7.getElementsByTagName("Max").item(0).getTextContent().split(" ");
-            for (int i = 0; i < count; i++) {
-                maxBytes[i] = max[i].getBytes(Charset.forName("UTF-8"));
-            }
-//            System.out.println("MAX_IN: " + Arrays.deepToString(max));
-            max = null;
-
-            byte [][] minMax = new byte[count * 2][];
-            System.arraycopy(minBytes, 0, minMax, 0, count);
-            System.arraycopy(maxBytes, 0, minMax, count, count);
-
-
-            ByteArrayOutputStream bucket = new ByteArrayOutputStream();
-            DataOutputStream out = new DataOutputStream(bucket);
-
-            for(byte[] row : minMax) {
-                for(int i : row) {
-                    try {
-                        out.write(i);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-
-            return bucket.toByteArray();
-//            System.out.println("MIN_BYTES: " + Arrays.deepToString(minBytes));
-//            System.out.println("DATAES: " + Arrays.toString(data));
-
-//            // TESTING 'toString'
-//            int countOut = minMax.length / 2;
-//            System.out.println("COUNT_OUT=" + countOut);
+//    public byte[] getWaveFormData(FileManager fileManager) {
+//        AudioInputStream ais = null;
+//        try {
+//            ais = AudioSystem.getAudioInputStream(new File(fileManager.getAudioFilePath()));
+//        } catch (UnsupportedAudioFileException e) {
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        Config config = new ConfigDefault();
 //
-//            String [] minOut = new String[countOut];
-//            String [] maxOut = new String[countOut];
-//            byte [][] minBytesOut = new byte[countOut][];
-//            byte [][] maxBytesOut = new byte[countOut][];
+//        /* Turn all descriptors off */
+//        config.enableAll(false);
+//        // set HopSize in ms
+//        config.setValue("Resizer", "HopSize", Integer.parseInt(ResourceBundle.getBundle("config").getString("hopSize")));
+//        config.setValue("AudioWaveform", "enable", true); // Extract the AudioWaveform
 //
-//            System.arraycopy(minMax, 0, minBytesOut, 0, countOut);
-//            System.arraycopy(minMax, countOut, maxBytesOut, 0, countOut);
+//        Document mpeg7;
+//        try {
+//            assert ais != null;
+//            mpeg7 = MP7DocumentBuilder.encode(ais, config);
 //
-//            for (int i = 0; i < countOut; i++) {
-//                minOut[i] = new String(minBytesOut[i], Charset.forName("UTF-8"));
-//                maxOut[i] = new String(maxBytesOut[i], Charset.forName("UTF-8"));
+//            String [] min = mpeg7.getElementsByTagName("Min").item(0).getTextContent().split(" ");
+//
+//
+//            // 'toBytes'
+//            int count = min.length;
+////            System.out.println("COUNT_IN=" + count);
+//            byte [][] minBytes = new byte[count][];
+//
+//            for (int i = 0; i < count; i++) {
+//                minBytes[i] = min[i].getBytes(Charset.forName("UTF-8"));
 //            }
-//            System.out.println("MIN_OUT" + Arrays.toString(minOut));
-//            System.out.println("MAX_OUT" + Arrays.toString(maxOut));
-
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
+////            System.out.println("MIN_IN: " + Arrays.deepToString(min));
+//            min = null;
+//
+//            byte [][] maxBytes = new byte[count][];
+//            String [] max = mpeg7.getElementsByTagName("Max").item(0).getTextContent().split(" ");
+//            for (int i = 0; i < count; i++) {
+//                maxBytes[i] = max[i].getBytes(Charset.forName("UTF-8"));
+//            }
+////            System.out.println("MAX_IN: " + Arrays.deepToString(max));
+//            max = null;
+//
+//            byte [][] minMax = new byte[count * 2][];
+//            System.arraycopy(minBytes, 0, minMax, 0, count);
+//            System.arraycopy(maxBytes, 0, minMax, count, count);
+//
+//
+//            ByteArrayOutputStream bucket = new ByteArrayOutputStream();
+//            DataOutputStream out = new DataOutputStream(bucket);
+//
+//            for(byte[] row : minMax) {
+//                for(int i : row) {
+//                    try {
+//                        out.write(i);
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//            }
+//
+//            return bucket.toByteArray();
+////            System.out.println("MIN_BYTES: " + Arrays.deepToString(minBytes));
+////            System.out.println("DATAES: " + Arrays.toString(data));
+//
+////            // TESTING 'toString'
+////            int countOut = minMax.length / 2;
+////            System.out.println("COUNT_OUT=" + countOut);
+////
+////            String [] minOut = new String[countOut];
+////            String [] maxOut = new String[countOut];
+////            byte [][] minBytesOut = new byte[countOut][];
+////            byte [][] maxBytesOut = new byte[countOut][];
+////
+////            System.arraycopy(minMax, 0, minBytesOut, 0, countOut);
+////            System.arraycopy(minMax, countOut, maxBytesOut, 0, countOut);
+////
+////            for (int i = 0; i < countOut; i++) {
+////                minOut[i] = new String(minBytesOut[i], Charset.forName("UTF-8"));
+////                maxOut[i] = new String(maxBytesOut[i], Charset.forName("UTF-8"));
+////            }
+////            System.out.println("MIN_OUT" + Arrays.toString(minOut));
+////            System.out.println("MAX_OUT" + Arrays.toString(maxOut));
+//
+//        } catch (ParserConfigurationException e) {
+//            e.printStackTrace();
+//        }
+//        return null;
+//    }
 }

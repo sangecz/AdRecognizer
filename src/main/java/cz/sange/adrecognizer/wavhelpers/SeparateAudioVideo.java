@@ -29,7 +29,7 @@ public class SeparateAudioVideo {
         IMediaReader mediaReader = ToolFactory.makeReader(from);
         final int mySampleRate = 44100;
         final int myChannels = 2;
-        final int myBitrate = 128;
+        final int myBitrate = 126;
 
         mediaReader.addListener(new MediaToolAdapter() {
 

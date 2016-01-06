@@ -71,7 +71,7 @@ public class WavFile
 	}
 
 	public double getDuration(){
-		return (numFrames+0.0) / sampleRate;
+		return (numFrames + 0.0) / sampleRate;
 	}
 
 	public int getValidBits()

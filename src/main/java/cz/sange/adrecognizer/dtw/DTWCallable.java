@@ -1,6 +1,8 @@
 package cz.sange.adrecognizer.dtw;
 
 import cz.sange.adrecognizer.bean.MainManagedBean;
+import cz.sange.adrecognizer.service.FileManager;
+import cz.sange.adrecognizer.utils.MyUtils;
 
 import java.util.Arrays;
 import java.util.concurrent.Callable;
@@ -49,7 +51,7 @@ public class DTWCallable implements Callable<DTWResult> {
                 mainManagedBean.setProcessed(i - start, threadNo);
             }
         }
-        return new DTWResult(minDtw, position);
+        return new DTWResult(minDtw, position, delimiterData.length);
     }
 
     private int DTWDistance(byte [] sample) {

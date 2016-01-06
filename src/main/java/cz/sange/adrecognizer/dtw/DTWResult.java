@@ -7,10 +7,20 @@ public class DTWResult {
 
     private int minDtw;
     private int position;
+    private int delimiterLenBytes;
 
-    public DTWResult(int minDtw, int position) {
+    public DTWResult(int minDtw, int position, int delimiterLenBytes) {
         this.minDtw = minDtw;
         this.position = position;
+        this.delimiterLenBytes = delimiterLenBytes;
+    }
+
+    public int getDelimiterLenBytes() {
+        return delimiterLenBytes;
+    }
+
+    public void setDelimiterLenBytes(int delimiterLenBytes) {
+        this.delimiterLenBytes = delimiterLenBytes;
     }
 
     public int getMinDtw() {

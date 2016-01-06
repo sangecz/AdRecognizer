@@ -20,7 +20,7 @@ public class DTWService {
         this.mainManagedBean = bean;
     }
 
-    public DTWResult start(byte[] delimiterData) {
+    public ArrayList<DTWResult> start(byte[] delimiterData) {
 
         ExecutorService executor = Executors.newWorkStealingPool();
 
@@ -47,9 +47,7 @@ public class DTWService {
             e.printStackTrace();
         }
 
-        Collections.sort(results, (o1, o2) -> o1.getMinDtw() - o2.getMinDtw());
-
-        return results.get(0);
+        return results;
     }
 
 
