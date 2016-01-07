@@ -29,8 +29,12 @@ public class FileValidator implements Validator {
             throw  new ValidatorException(new FacesMessage(rd.getString("chooseFile")));
         }
 
+        System.out.println("*** " + file.getContentType());
+
         if(!file.getContentType().startsWith("video") && !file.getContentType().contains("octet-stream") ) {
-            throw  new ValidatorException(new FacesMessage(rd.getString("notVideo")));
+            if(!file.getContentType().startsWith("audio/wav")){
+                throw  new ValidatorException(new FacesMessage(rd.getString("notVideoAudio")));
+            }
         }
     }
 

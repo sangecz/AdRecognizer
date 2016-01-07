@@ -30,7 +30,7 @@ public class SrtRecord {
         stringBuilder.append(timeStamp);
         stringBuilder.append("\n");
         stringBuilder.append(msg);
-        stringBuilder.append("\n");
+        stringBuilder.append("\n\n");
     }
 
     @Override

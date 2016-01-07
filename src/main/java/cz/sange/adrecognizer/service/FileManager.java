@@ -1,5 +1,6 @@
 package cz.sange.adrecognizer.service;
 
+import cz.sange.adrecognizer.utils.MyUtils;
 import cz.sange.adrecognizer.wavhelpers.SeparateAudioVideo;
 
 import javax.faces.application.FacesMessage;
@@ -39,15 +40,19 @@ public class FileManager {
 
         final String path = resourceBundle.getString("videoFileDestination");
         final Part filePart = file;
-        final String fileName = getFileName(filePart);
+        final String fileName = MyUtils.getFileName(filePart);
         videoFilePath = path + File.separator + fileName;
-        audioFilePath = path + File.separator + fileName + ".wav";
+        audioFilePath = path + File.separator + fileName + (!file.getContentType().startsWith("audio/wav") ? ".wav" : "");
 
         OutputStream out = null;
         InputStream filecontent = null;
 
         try {
-            out = new FileOutputStream(new File(videoFilePath));
+            if (!file.getContentType().startsWith("audio/wav")) {
+                out = new FileOutputStream(new File(videoFilePath));
+            } else {
+                out = new FileOutputStream(new File(audioFilePath));
+            }
             filecontent = filePart.getInputStream();
 
             int read = 0;
@@ -93,18 +98,6 @@ public class FileManager {
             FacesMessage m = new FacesMessage(resourceBundle.getString("ioException"));
             FacesContext.getCurrentInstance().addMessage("form:err", m);
         }
-    }
-
-
-    private String getFileName(final Part part) {
-        final String partHeader = part.getHeader("content-disposition");
-        for (String content : part.getHeader("content-disposition").split(";")) {
-            if (content.trim().startsWith("filename")) {
-                return content.substring(
-                        content.indexOf('=') + 1).trim().replace("\"", "");
-            }
-        }
-        return null;
     }
 
     public String getVideoFilePath() {

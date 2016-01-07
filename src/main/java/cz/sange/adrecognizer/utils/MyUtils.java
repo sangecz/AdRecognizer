@@ -9,6 +9,7 @@ import org.w3c.dom.Document;
 
 import javax.faces.application.FacesMessage;
 import javax.faces.context.FacesContext;
+import javax.servlet.http.Part;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
@@ -24,6 +25,16 @@ import java.util.ResourceBundle;
  * Created by sange on 05/01/16.
  */
 public class MyUtils {
+
+    public static String getFileName(final Part part) {
+        for (String content : part.getHeader("content-disposition").split(";")) {
+            if (content.trim().startsWith("filename")) {
+                return content.substring(
+                        content.indexOf('=') + 1).trim().replace("\"", "");
+            }
+        }
+        return null;
+    }
 
     public static byte[] getWaveFormData(FileManager fileManager) {
         AudioInputStream ais = null;
@@ -115,7 +126,7 @@ public class MyUtils {
         return null;
     }
 
-    public static double getAudioFileDuration(String in) {
+    public static double getAudioFileDurationSecs(String in) {
         double duration = -1;
         try {
             // Open the wav file specified as the first argument

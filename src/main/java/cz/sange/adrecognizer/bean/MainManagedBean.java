@@ -23,9 +23,11 @@ import java.util.*;
 @SessionScoped
 public class MainManagedBean implements Serializable {
 
+    public static final int SHIFT = 60;
+    private ResourceBundle resourceBundle = ResourceBundle.getBundle("msg");
     public static final int THREADS_NO = 4;
-    private static final int AD_DURATION_MINS = 5;
-    private static final int TH = 1300;
+    private static final int AD_DURATION_MINS = Integer.parseInt(ResourceBundle.getBundle("config").getString("adDuration"));
+    private static final int TH = Integer.parseInt(ResourceBundle.getBundle("config").getString("TH"));
     @NotNull
     private Part file;
     private String srtFilePath;
@@ -33,10 +35,9 @@ public class MainManagedBean implements Serializable {
     private FileManager fileManager;
     // AudioWaveForm data from input video
     private byte [] videoData;
+
     @EJB
     private DelimiterService delimiterService;
-
-    private ResourceBundle resourceBundle = ResourceBundle.getBundle("msg");
 
     private String msg = "";
     private String state = "";
@@ -48,7 +49,6 @@ public class MainManagedBean implements Serializable {
     ArrayList<DTWResult> results;
 
     public String processFile() {
-//        RequestContext.getCurrentInstance().execute("showLoader();");
         long start = System.currentTimeMillis();
         setState(resourceBundle.getString("working"));
         setReady(false);
@@ -67,15 +67,15 @@ public class MainManagedBean implements Serializable {
 
         long end2 = System.currentTimeMillis();
         log("upload-end", (end2 - start2) / 1000);
-//        System.out.println("********************** UPLOAD **" + (end2 - start2) / 1000 + " s");
         start2 = System.currentTimeMillis();
         log("convert-start", -1);
 
-        fileManager.convertVideoToWav();
+        if (!file.getContentType().startsWith("audio/wav")) {
+            fileManager.convertVideoToWav();
+        }
 
         end2 = System.currentTimeMillis();
         log("convert-end", (end2 - start2) / 1000);
-//        System.out.println("********************** CON2WAV **" + (end2 - start2) / 1000 + " s");
         start2 = System.currentTimeMillis();
         log("wave-start", -1);
 
@@ -85,7 +85,6 @@ public class MainManagedBean implements Serializable {
 
         end2 = System.currentTimeMillis();
         log("wave-end", (end2 - start2) / 1000);
-//        System.out.println("********************** WAVEFOR **" + (end2 - start2) / 1000 + " s");
         start2 = System.currentTimeMillis();
         log("match-start", -1);
 
@@ -93,7 +92,6 @@ public class MainManagedBean implements Serializable {
 
         end2 = System.currentTimeMillis();
         log("match-end", (end2 - start2) / 1000);
-//        System.out.println("********************** MATCH **" + (end2 - start2) / 1000 + " s");
         start2 = System.currentTimeMillis();
         log("srt-start", -1);
 
@@ -101,7 +99,6 @@ public class MainManagedBean implements Serializable {
 
         end2 = System.currentTimeMillis();
         log("srt-end", (end2 - start2) / 1000);
-//        System.out.println("********************** MAKESRT **" + (end2 - start2) / 1000 + " s");
         start2 = System.currentTimeMillis();
         log("cleanup-start", -1);
 
@@ -109,7 +106,6 @@ public class MainManagedBean implements Serializable {
 
         end2 = System.currentTimeMillis();
         log("cleanup-end", (end2 - start2) / 1000);
-//        System.out.println("********************** CLEANUP **" + (end2 - start2) / 1000 + " s");
 
         setReady(true);
         long end = System.currentTimeMillis();
@@ -118,7 +114,6 @@ public class MainManagedBean implements Serializable {
         logMsg += "---------------end--------------\n";
         setLog(logMsg);
 
-//        RequestContext.getCurrentInstance().execute("hideLoader();");
         return "index";
     }
 
@@ -138,25 +133,24 @@ public class MainManagedBean implements Serializable {
 
 
     private void tryAllDelimitersFromDB() {
-//        System.out.println("*********VIDEO: #bytes=" + videoData.length);
-
         DTWService dtwService = new DTWService(videoData, this);
         results = new ArrayList<>(THREADS_NO);
         List<Delimiter> delimiterList = delimiterService.getAll();
         for (Delimiter d : delimiterList) {
-
-//            System.out.println("*********DELIMITER: #bytes=" + d.getData().length + ", name=" + d.getName());
-            // DTW
             results.addAll(dtwService.start(d.getData()));
-
-//            msg = "";
-//            for (DTWResult result : results) {
-//                msg += "DTWdist=" + result.getMinDtw() + ", pos="
-//                        + MyUtils.getFormattedTime(
-//                        MyUtils.getAudioFileDuration(fileManager.getAudioFilePath()) * (result.getPosition() + 0.0) / videoData.length)
-//                        + ", dur=" + MyUtils.getFormattedTime(MyUtils.getAudioFileDuration(fileManager.getAudioFilePath())) + "== ";
-//            }
         }
+
+        // Possible Ad positions
+        double videDuration = MyUtils.getAudioFileDurationSecs(fileManager.getAudioFilePath());
+        logMsg += "*** Possible Ad positions: \n";
+        for (DTWResult r : results){
+            logMsg += ("*** "
+                    + MyUtils.getFormattedTime(
+                    videDuration * (r.getPosition() + 0.0) / videoData.length + SHIFT)
+                    + " dtw=" + r.getMinDtw() + " #bytes=" + r.getDelimiterLenBytes()
+            ) + "\n";
+        }
+        setLog(logMsg);
 
         // remove results > TH
         ArrayList<DTWResult> toRemove = new ArrayList<>(results.size());
@@ -166,7 +160,6 @@ public class MainManagedBean implements Serializable {
             }
         }
         toRemove.forEach(results::remove);
-        toRemove = null;
 
         // sort by distance
         Collections.sort(results, (o1, o2) -> o1.getMinDtw() - o2.getMinDtw());
@@ -177,7 +170,7 @@ public class MainManagedBean implements Serializable {
         srtFilePath = fileManager.getVideoFilePath() + ".srt";
         SrtFile srtFile = new SrtFile(srtFilePath);
 
-        int videoMins = (int) (MyUtils.getAudioFileDuration(fileManager.getAudioFilePath()) / 60);
+        int videoMins = (int) (MyUtils.getAudioFileDurationSecs(fileManager.getAudioFilePath()) / 60);
         // assumption, ads max every 10mins
         int th = Math.ceil(videoMins / 10) > results.size() ? results.size() : (int) Math.ceil(videoMins / 10);
         // get sublist
@@ -194,10 +187,10 @@ public class MainManagedBean implements Serializable {
         for (int i = 0; i < th; i++) {
             DTWResult result = results.get(i);
 
-            double startTime = MyUtils.getAudioFileDuration(fileManager.getAudioFilePath()) * (result.getPosition() + 0.0) / videoData.length;
-            String start = MyUtils.getFormattedTime(startTime);
+            double startTime = MyUtils.getAudioFileDurationSecs(fileManager.getAudioFilePath()) * (result.getPosition() + 0.0) / videoData.length;
+            String start = MyUtils.getFormattedTime(startTime + SHIFT);
 
-            double durationTime = (startTime + AD_DURATION_MINS * 60); // add 5min
+            double durationTime = (startTime + AD_DURATION_MINS * 60 + SHIFT); // add X mins
             String end = MyUtils.getFormattedTime(durationTime);
 
             SrtRecord r = new SrtRecord(i + 1, start + " --> " + end, resourceBundle.getString("advertismentStr"));
@@ -335,7 +328,7 @@ public class MainManagedBean implements Serializable {
             cnt += this.processed[i];
         }
 
-        setProgress(cnt * 100 / videoData.length / delimiterService.getAll().size() + "");
+        setProgress(cnt * 100 / videoData.length + "");
     }
 
     public String getLog() {

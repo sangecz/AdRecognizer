@@ -44,18 +44,9 @@ public class DelimiterManagedBean {
         FileManager fileManager = FileManager.getInstance();
         fileManager.setFile(file);
         fileManager.uploadFile();
-        fileManager.convertVideoToWav();
-
-//        try {
-//            RandomAccessFile f = new RandomAccessFile(fileManager.getAudioFilePath(), "r");
-//            data = new byte[(int)f.length()];
-//            f.read(data);
-//        } catch (IOException e) {
-//            ResourceBundle resourceBundle = ResourceBundle.getBundle("msg");
-//            FacesMessage m = new FacesMessage(resourceBundle.getString("ioException") + ": " + e.toString());
-//            FacesContext ctx = FacesContext.getCurrentInstance();
-//            ctx.addMessage("form:err", m);
-//        }
+        if (!file.getContentType().startsWith("audio/wav")) {
+            fileManager.convertVideoToWav();
+        }
 
         data = MyUtils.getWaveFormData(fileManager);
         d.setData(data);
